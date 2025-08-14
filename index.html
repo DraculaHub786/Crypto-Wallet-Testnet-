@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Real Crypto Wallet (Testnet)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.8.0/dist/ethers.umd.min.js"></script>
+  <style>
+    :root { 
+      --bg:#050c1d; 
+      --card:#0f1724; 
+      --accent:#06b6d4; 
+      --accent-light:#38e1f7; 
+      --text:#f0f4fa; 
+      --muted:#94a3b8; 
+      --border:rgba(255,255,255,0.06);
+    }
+    body {
+      margin:0;
+      font-family: 'Inter', system-ui, Arial, sans-serif;
+      background: radial-gradient(circle at top, #071029 0%, #050c1d 100%);
+      color:var(--text);
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+    }
+    .container {
+      width:100%;
+      max-width:440px;
+      padding:28px;
+      border-radius:16px;
+      background:rgba(255,255,255,0.04);
+      box-shadow:0 8px 30px rgba(0,0,0,0.45);
+      backdrop-filter: blur(12px);
+      animation: fadeIn 0.5s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity:0; transform:translateY(10px); }
+      to { opacity:1; transform:translateY(0); }
+    }
+    h1 {
+      margin:0 0 10px 0;
+      font-size:22px;
+      font-weight:700;
+      background:linear-gradient(90deg,var(--accent),var(--accent-light));
+      -webkit-background-clip:text;
+      -webkit-text-fill-color:transparent;
+    }
+    .muted {
+      color:var(--muted);
+      font-size:13px;
+      margin-bottom:18px;
+      line-height:1.4;
+    }
+    .row {
+      display:flex;
+      gap:8px;
+      margin-bottom:10px;
+    }
+    input {
+      flex:1;
+      padding:10px 12px;
+      border-radius:8px;
+      border:1px solid var(--border);
+      background:rgba(255,255,255,0.02);
+      color:var(--text);
+      transition: border 0.2s ease, box-shadow 0.2s ease;
+      font-size:14px;
+    }
+    input:focus {
+      border-color: var(--accent);
+      box-shadow:0 0 0 2px rgba(6,182,212,0.3);
+      outline:none;
+    }
+    button {
+      padding:10px 14px;
+      border-radius:8px;
+      border:none;
+      background:var(--accent);
+      color:#022;
+      cursor:pointer;
+      font-weight:600;
+      transition: background 0.25s ease, transform 0.15s ease;
+    }
+    button:hover {
+      background:var(--accent-light);
+      transform: translateY(-1px);
+    }
+    .small {
+      font-size:13px;
+      color:var(--muted);
+    }
+    #transactions {
+      max-height:160px;
+      overflow:auto;
+      margin-top:8px;
+      padding:8px;
+      border-radius:8px;
+      background:rgba(255,255,255,0.03);
+      font-size:13px;
+      line-height:1.4;
+      border:1px solid var(--border);
+    }
+    #transactions div:hover {
+      background:rgba(255,255,255,0.04);
+      border-radius:6px;
+    }
+    a.link {
+      color:var(--accent-light);
+      text-decoration:none;
+    }
+    a.link:hover {
+      text-decoration:underline;
+    }
+    /* Scrollbar style */
+    #transactions::-webkit-scrollbar {
+      width:6px;
+    }
+    #transactions::-webkit-scrollbar-thumb {
+      background:var(--muted);
+      border-radius:3px;
+    }
+    #transactions::-webkit-scrollbar-track {
+      background:transparent;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Crypto Wallet — Testnet</h1>
+    <div class="muted">Connect with MetaMask (Sepolia or another testnet). No backend required for sends.</div>
+
+    <div style="margin-bottom:8px;"><strong>Address:</strong> <span id="address" class="small">Not connected</span></div>
+    <div style="margin-bottom:12px;"><strong>Balance:</strong> <span id="balance">-</span> <span class="small">ETH</span></div>
+
+    <div style="display:flex;gap:8px; margin-bottom:12px;">
+      <button id="connectBtn">Connect Wallet</button>
+      <button id="refreshBtn">Refresh Balance</button>
+    </div>
+
+    <div style="margin-top:6px;">
+      <div class="small">Send ETH</div>
+      <div class="row">
+        <input id="to" placeholder="Recipient address (0x...)" />
+      </div>
+      <div class="row">
+        <input id="amount" type="number" step="0.0001" placeholder="Amount (ETH)" />
+      </div>
+      <div style="display:flex;gap:8px;margin-top:6px;">
+        <button id="sendBtn">Send</button>
+        <button id="txSimBtn">Simulate</button>
+      </div>
+    </div>
+
+    <div style="margin-top:12px;">
+      <div class="small">Transactions (local log)</div>
+      <div id="transactions"></div>
+    </div>
+
+    <div style="margin-top:12px;" class="small">
+      Helpful: Use Sepolia Faucet to get test ETH. View transaction on Etherscan (Sepolia).
+    </div>
+  </div>
+
+<script>
+/* Your original script is untouched */
+document.addEventListener('DOMContentLoaded', () => {
+  const connectBtn = document.getElementById('connectBtn');
+  const refreshBtn = document.getElementById('refreshBtn');
+  const sendBtn = document.getElementById('sendBtn');
+  const txSimBtn = document.getElementById('txSimBtn');
+  const addressEl = document.getElementById('address');
+  const balanceEl = document.getElementById('balance');
+  const toEl = document.getElementById('to');
+  const amountEl = document.getElementById('amount');
+  const txList = document.getElementById('transactions');
+
+  let provider;
+  let signer;
+  let currentAddress;
+
+  function addTxLog(html) {
+    const el = document.createElement('div');
+    el.style.padding = '8px';
+    el.style.borderBottom = '1px solid rgba(255,255,255,0.03)';
+    el.innerHTML = html;
+    txList.prepend(el);
+  }
+
+  const setDisconnected = () => {
+    addressEl.innerText = 'Not connected';
+    balanceEl.innerText = '-';
+  };
+
+  async function detectProvider() {
+    if (window.ethereum) {
+      provider = new ethers.BrowserProvider(window.ethereum);
+      return true;
+    }
+    return false;
+  }
+
+  async function setupEthEvents() {
+    if (!window.ethereum || window.ethereum._walletEventsBound) return;
+
+    window.ethereum.on('connect', async () => {
+      addTxLog('<small class="small">Provider connect</small>');
+      provider = new ethers.BrowserProvider(window.ethereum);
+      try {
+        signer = await provider.getSigner();
+        currentAddress = await signer.getAddress();
+        addressEl.innerText = currentAddress;
+        await refreshBalance();
+      } catch {}
+    });
+
+    window.ethereum.on('disconnect', () => {
+      addTxLog('<small class="small">Provider disconnect</small>');
+      signer = undefined;
+      currentAddress = undefined;
+      setDisconnected();
+    });
+
+    window.ethereum.on('accountsChanged', async (accounts) => {
+      addTxLog(`<small class="small">accountsChanged: ${accounts[0] || 'none'}</small>`);
+      if (!accounts || accounts.length === 0) {
+        signer = undefined;
+        currentAddress = undefined;
+        setDisconnected();
+        return;
+      }
+      provider = new ethers.BrowserProvider(window.ethereum);
+      signer = await provider.getSigner();
+      currentAddress = accounts[0];
+      addressEl.innerText = currentAddress;
+      await refreshBalance();
+    });
+
+    window.ethereum.on('chainChanged', async () => {
+      addTxLog('<small class="small">chainChanged — refreshing…</small>');
+      provider = new ethers.BrowserProvider(window.ethereum);
+      if (currentAddress) signer = await provider.getSigner();
+      await refreshBalance();
+    });
+
+    window.ethereum._walletEventsBound = true;
+  }
+
+  async function hydrateFromExistingConnection() {
+    const ok = await detectProvider();
+    if (!ok) {
+      addressEl.innerText = 'MetaMask not detected';
+      return;
+    }
+    await setupEthEvents();
+
+    try {
+      const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+      if (accounts && accounts.length) {
+        signer = await provider.getSigner();
+        currentAddress = accounts[0];
+        addressEl.innerText = currentAddress;
+        await refreshBalance();
+      } else {
+        addressEl.innerText = 'MetaMask available — click Connect';
+      }
+    } catch (err) {
+      console.error('hydrate error', err);
+      addressEl.innerText = 'MetaMask available — click Connect';
+    }
+  }
+
+  async function connectWallet() {
+    const ok = await detectProvider();
+    if (!ok) {
+      alert('MetaMask not detected. Please install MetaMask and reload the page.');
+      return;
+    }
+    await setupEthEvents();
+    try {
+      await provider.send('eth_requestAccounts', []);
+      signer = await provider.getSigner();
+      currentAddress = await signer.getAddress();
+      addressEl.innerText = currentAddress;
+      addTxLog(`<small class="small">Connected: ${currentAddress}</small>`);
+      await refreshBalance();
+    } catch (err) {
+      console.error('Connection error', err);
+      alert('Connection failed: ' + (err.message || err));
+    }
+  }
+
+  async function refreshBalance() {
+    if (!provider) {
+      const ok = await detectProvider();
+      if (!ok) return;
+    }
+    if (!signer || !currentAddress) return;
+    try {
+      const bal = await provider.getBalance(currentAddress);
+      balanceEl.innerText = ethers.formatEther(bal);
+    } catch (err) {
+      console.error('Balance error', err);
+      alert('Failed to fetch balance: ' + (err.message || err));
+    }
+  }
+
+  async function sendTx() {
+    if (!signer) { alert('Connect wallet first'); return; }
+    const to = toEl.value.trim();
+    const amount = amountEl.value.trim();
+    if (!to || !amount) { alert('Provide recipient and amount'); return; }
+    if (!to.startsWith('0x') || to.length !== 42) {
+      if (!confirm('Recipient address may be invalid. Continue?')) return;
+    }
+    if (Number(amount) > 0.5) {
+      const last4 = to.slice(-4);
+      const typed = prompt('You are sending a large amount. Type last 4 chars of recipient to confirm:');
+      if (typed !== last4) { alert('Confirmation failed'); return; }
+    }
+    try {
+      const txReq = { to, value: ethers.parseEther(amount) };
+      addTxLog('Sending transaction...');
+      const txResp = await signer.sendTransaction(txReq);
+      addTxLog(`Broadcasted: <a class="link" href="https://sepolia.etherscan.io/tx/${txResp.hash}" target="_blank">${txResp.hash}</a>`);
+      await txResp.wait();
+      addTxLog(`Confirmed: <a class="link" href="https://sepolia.etherscan.io/tx/${txResp.hash}" target="_blank">${txResp.hash}</a>`);
+      await refreshBalance();
+    } catch (err) {
+      console.error('Send error', err);
+      alert('Send failed: ' + (err.message || err));
+    }
+  }
+
+  async function simulateTx() {
+    if (!signer || !currentAddress) { alert('Connect wallet first'); return; }
+    const to = toEl.value.trim();
+    const amount = amountEl.value.trim();
+    if (!to || !amount) { alert('Provide recipient and amount'); return; }
+    try {
+      const txReq = { to, value: ethers.parseEther(amount), from: currentAddress };
+      const gas = await provider.estimateGas(txReq);
+      addTxLog(`Simulation: gas estimate ${gas.toString()}. Proceed with caution.`);
+    } catch (err) {
+      addTxLog('Simulation error: ' + (err.message || err));
+    }
+  }
+
+  connectBtn.addEventListener('click', connectWallet);
+  refreshBtn.addEventListener('click', refreshBalance);
+  sendBtn.addEventListener('click', sendTx);
+  txSimBtn.addEventListener('click', simulateTx);
+
+  hydrateFromExistingConnection();
+});
+</script>
+</body>
+</html>
