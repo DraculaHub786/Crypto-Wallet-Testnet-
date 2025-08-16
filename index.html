@@ -1,171 +1,221 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Real Crypto Wallet (Testnet)</title>
+  <title>Crypto Wallet — Testnet</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://cdn.jsdelivr.net/npm/ethers@6.8.0/dist/ethers.umd.min.js"></script>
+
   <style>
-    :root { 
-      --bg:#050c1d; 
-      --card:#0f1724; 
-      --accent:#06b6d4; 
-      --accent-light:#38e1f7; 
-      --text:#f0f4fa; 
-      --muted:#94a3b8; 
-      --border:rgba(255,255,255,0.06);
+    :root{
+      --bg1:#0a1638; --bg2:#08112b; --bg3:#101337;
+      --glass: rgba(255,255,255,0.08);
+      --glass-border: rgba(255,255,255,0.18);
+      --text:#eef3fb;
+      --muted:#94a3b8;
+      --accent:#06b6d4;
+      --accent-2:#7f5af0;
+      --success:#17c964;
+      --warn:#f5a524;
+      --error:#f31260;
     }
-    body {
-      margin:0;
-      font-family: 'Inter', system-ui, Arial, sans-serif;
-      background: radial-gradient(circle at top, #071029 0%, #050c1d 100%);
-      color:var(--text);
-      min-height:100vh;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding:20px;
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family: Inter, system-ui, Arial, sans-serif; color:var(--text);
+      background: radial-gradient(1200px 800px at 20% -10%, #0f214f 0%, transparent 55%),
+                  radial-gradient(1000px 700px at 110% 10%, #181245 0%, transparent 60%),
+                  linear-gradient(160deg, var(--bg1), var(--bg2) 50%, var(--bg3));
+      background-size: 200% 200%;
+      animation: bgMove 12s ease-in-out infinite alternate;
+      display:flex; align-items:center; justify-content:center; padding:20px;
     }
-    .container {
-      width:100%;
-      max-width:440px;
-      padding:28px;
-      border-radius:16px;
-      background:rgba(255,255,255,0.04);
-      box-shadow:0 8px 30px rgba(0,0,0,0.45);
-      backdrop-filter: blur(12px);
-      animation: fadeIn 0.5s ease;
+    @keyframes bgMove{
+      0%{background-position: 0% 0%, 100% 0%, 0% 0%}
+      100%{background-position: 100% 100%, 0% 100%, 100% 100%}
     }
-    @keyframes fadeIn {
-      from { opacity:0; transform:translateY(10px); }
-      to { opacity:1; transform:translateY(0); }
+
+    .shell{
+      width:100%; max-width:560px; position:relative;
     }
-    h1 {
-      margin:0 0 10px 0;
-      font-size:22px;
-      font-weight:700;
-      background:linear-gradient(90deg,var(--accent),var(--accent-light));
-      -webkit-background-clip:text;
-      -webkit-text-fill-color:transparent;
+    .card{
+      background: var(--glass);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border:1px solid var(--glass-border);
+      border-radius:20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.06);
+      padding:22px;
     }
-    .muted {
-      color:var(--muted);
+    .header{
+      display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;
+    }
+    .title{
+      font-weight:800; font-size:18px; letter-spacing:.3px;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+    }
+    .badge{
+      display:inline-flex; align-items:center; gap:8px; padding:6px 10px; border-radius:999px;
+      background: linear-gradient(90deg, rgba(6,182,212,0.16), rgba(127,90,240,0.16));
+      border:1px solid rgba(255,255,255,0.14);
+      font-size:12px; color:#d7e7ff;
+    }
+    .dot{width:8px;height:8px;border-radius:50%; background:#9f7aea; box-shadow:0 0 10px #9f7aea;}
+    .address-row{display:flex; align-items:center; gap:8px; color:var(--muted); font-size:13px;}
+    .copy-btn, .small-btn{
+      border:1px solid var(--glass-border); background:rgba(255,255,255,0.04); color:var(--text);
+      padding:8px 10px; border-radius:10px; cursor:pointer; font-weight:600; font-size:12px;
+      transition: transform .15s ease, background .2s ease, border-color .2s ease;
+    }
+    .copy-btn:hover, .small-btn:hover{ transform: translateY(-1px); background:rgba(255,255,255,0.08); border-color:rgba(255,255,255,0.28); }
+
+    .balance-card{
+      margin-top:8px; display:flex; align-items:center; justify-content:space-between; gap:14px;
+      padding:18px; border-radius:18px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
+      border:1px solid var(--glass-border);
+    }
+    .bal-left{display:flex; flex-direction:column; gap:6px;}
+    .bal-amt{font-size:28px; font-weight:800; letter-spacing:.2px}
+    .bal-sub{font-size:12px; color:var(--muted); display:flex; align-items:center; gap:8px}
+    .refresh-dot{width:8px;height:8px;border-radius:50%; background:var(--accent); box-shadow:0 0 10px var(--accent); animation: pulse 2s ease-in-out infinite;}
+    @keyframes pulse{0%{opacity:.6} 50%{opacity:1} 100%{opacity:.6}}
+
+    .eth-logo{
+      width:46px; height:46px; border-radius:12px;
+      background: radial-gradient(60% 60% at 40% 30%, rgba(6,182,212,0.35), transparent 60%),
+                  linear-gradient(180deg, rgba(255,255,255,0.18), rgba(255,255,255,0.02));
+      display:grid; place-items:center; border:1px solid var(--glass-border);
+      box-shadow: inset 0 0 18px rgba(6,182,212,0.12), 0 10px 28px rgba(6,182,212,0.14);
+    }
+    .row{display:flex; gap:10px; margin-top:10px;}
+    input{
+      flex:1; padding:12px 12px; border-radius:12px; border:1px solid var(--glass-border);
+      background: rgba(255,255,255,0.04); color:var(--text); font-size:14px;
+      outline:none; transition: border .2s ease, box-shadow .2s ease, background .2s ease;
+    }
+    input:focus{ border-color:rgba(6,182,212,0.6); box-shadow:0 0 0 3px rgba(6,182,212,0.20); background:rgba(255,255,255,0.06); }
+
+    .btn{
+      padding:12px 14px; border-radius:12px; border:1px solid transparent; cursor:pointer;
+      font-weight:700; letter-spacing:.2px; font-size:14px;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      color:#051018; box-shadow: 0 12px 30px rgba(6,182,212,0.22);
+      transition: transform .15s ease, box-shadow .2s ease, filter .2s ease;
+    }
+    .btn:hover{ transform: translateY(-1px); filter: brightness(1.05); box-shadow: 0 16px 38px rgba(6,182,212,0.30); }
+    .btn-secondary{
+      background: rgba(255,255,255,0.06); color:var(--text); border:1px solid var(--glass-border);
+      box-shadow:none;
+    }
+    .btn-secondary:hover{ background: rgba(255,255,255,0.1); }
+
+    .warn-bar{
+      display:none; margin-top:10px; padding:10px 12px; border-radius:12px;
+      background: rgba(245,165,36,0.12); border:1px solid rgba(245,165,36,0.35); color:#ffd89a;
       font-size:13px;
-      margin-bottom:18px;
-      line-height:1.4;
     }
-    .row {
-      display:flex;
-      gap:8px;
-      margin-bottom:10px;
+
+    .section-title{ margin-top:18px; color:var(--muted); font-size:13px; }
+
+    #transactions{
+      margin-top:10px; max-height:220px; overflow:auto; border-radius:14px; border:1px solid var(--glass-border);
+      background: rgba(255,255,255,0.04); padding:6px;
     }
-    input {
-      flex:1;
-      padding:10px 12px;
-      border-radius:8px;
-      border:1px solid var(--border);
-      background:rgba(255,255,255,0.02);
-      color:var(--text);
-      transition: border 0.2s ease, box-shadow 0.2s ease;
-      font-size:14px;
+    .tx{
+      display:flex; gap:10px; align-items:center; padding:10px; border-radius:12px;
+      border:1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03);
+      transition: background .2s ease, border-color .2s ease, transform .15s ease;
     }
-    input:focus {
-      border-color: var(--accent);
-      box-shadow:0 0 0 2px rgba(6,182,212,0.3);
-      outline:none;
+    .tx + .tx{ margin-top:8px; }
+    .tx:hover{ background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.18); }
+    .tx-icon{width:28px; height:28px; border-radius:8px; display:grid; place-items:center; font-size:16px;}
+    .tx.pending .tx-icon{ background: rgba(245,165,36,0.14); border:1px solid rgba(245,165,36,0.4); color:#ffd89a; animation: glow-pending 1.6s ease-in-out infinite; }
+    .tx.success .tx-icon{ background: rgba(23,201,100,0.14); border:1px solid rgba(23,201,100,0.4); color:#b5f7cf; }
+    .tx.fail .tx-icon{ background: rgba(243,18,96,0.14); border:1px solid rgba(243,18,96,0.4); color:#ffb3c9; }
+
+    @keyframes glow-pending{0%{box-shadow:0 0 0 rgba(245,165,36,0)} 50%{box-shadow:0 0 24px rgba(245,165,36,0.35)} 100%{box-shadow:0 0 0 rgba(245,165,36,0)}}
+
+    .tx-body{flex:1; font-size:13px;}
+    .tx-top{display:flex; justify-content:space-between; gap:8px; align-items:center;}
+    .tx-title{font-weight:700}
+    .tx-meta{color:var(--muted); font-size:12px}
+    .status-pill{
+      padding:4px 8px; border-radius:999px; font-weight:700; font-size:11px; border:1px solid transparent;
     }
-    button {
-      padding:10px 14px;
-      border-radius:8px;
-      border:none;
-      background:var(--accent);
-      color:#022;
-      cursor:pointer;
-      font-weight:600;
-      transition: background 0.25s ease, transform 0.15s ease;
-    }
-    button:hover {
-      background:var(--accent-light);
-      transform: translateY(-1px);
-    }
-    .small {
-      font-size:13px;
-      color:var(--muted);
-    }
-    #transactions {
-      max-height:160px;
-      overflow:auto;
-      margin-top:8px;
-      padding:8px;
-      border-radius:8px;
-      background:rgba(255,255,255,0.03);
-      font-size:13px;
-      line-height:1.4;
-      border:1px solid var(--border);
-    }
-    #transactions div:hover {
-      background:rgba(255,255,255,0.04);
-      border-radius:6px;
-    }
-    a.link {
-      color:var(--accent-light);
-      text-decoration:none;
-    }
-    a.link:hover {
-      text-decoration:underline;
-    }
-    /* Scrollbar style */
-    #transactions::-webkit-scrollbar {
-      width:6px;
-    }
-    #transactions::-webkit-scrollbar-thumb {
-      background:var(--muted);
-      border-radius:3px;
-    }
-    #transactions::-webkit-scrollbar-track {
-      background:transparent;
-    }
+    .pill-pending{ color:#ffd89a; background: rgba(245,165,36,0.10); border-color: rgba(245,165,36,0.35); }
+    .pill-success{ color:#bff7d0; background: rgba(23,201,100,0.12); border-color: rgba(23,201,100,0.35); }
+    .pill-fail{ color:#ffc1d3; background: rgba(243,18,96,0.12); border-color: rgba(243,18,96,0.35); }
+
+    a.link{ color:#aee9ff; text-decoration:none; }
+    a.link:hover{ text-decoration:underline; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Crypto Wallet — Testnet</h1>
-    <div class="muted">Connect with MetaMask (Sepolia or another testnet). No backend required for sends.</div>
+  <div class="shell">
+    <div class="card">
+      <div class="header">
+        <div class="title">Crypto Wallet — Testnet</div>
+        <div class="badge"><span class="dot"></span>Sepolia</div>
+      </div>
 
-    <div style="margin-bottom:8px;"><strong>Address:</strong> <span id="address" class="small">Not connected</span></div>
-    <div style="margin-bottom:12px;"><strong>Balance:</strong> <span id="balance">-</span> <span class="small">ETH</span></div>
+      <div class="address-row">
+        <div><strong>Address:</strong> <span id="address">Not connected</span></div>
+        <button id="copyAddrBtn" class="copy-btn" title="Copy address">Copy</button>
+      </div>
 
-    <div style="display:flex;gap:8px; margin-bottom:12px;">
-      <button id="connectBtn">Connect Wallet</button>
-      <button id="refreshBtn">Refresh Balance</button>
-    </div>
+      <div class="balance-card">
+        <div class="bal-left">
+          <div class="bal-amt"><span id="balance">-</span> ETH</div>
+          <div class="bal-sub"><span class="refresh-dot"></span><span id="lastUpdated">Last updated —</span></div>
+        </div>
+        <div class="eth-logo" aria-hidden="true">
+          <!-- Minimal ETH mark (vector) -->
+          <svg width="22" height="22" viewBox="0 0 256 417" fill="none" xmlns="http://www.w3.org/2000/svg" style="opacity:.9">
+            <path fill="#8A92B2" d="M127.6 0l-2.8 9.5v267.1l2.8 2.8 127.6-75.2L127.6 0z"/>
+            <path fill="#62688F" d="M127.6 0L0 204.2l127.6 75.2V0z"/>
+            <path fill="#454A75" d="M127.6 306.5l-1.6 2v106.5l1.6 4.6 127.7-180.1-127.7 66.9z"/>
+            <path fill="#8A92B2" d="M127.6 419.6V306.5L0 229.5l127.6 190.1z"/>
+            <path fill="#62688F" d="M127.6 279.4l127.6-75.2-127.6-57.8v133z"/>
+            <path fill="#454A75" d="M0 204.2l127.6 75.2v-133L0 204.2z"/>
+          </svg>
+        </div>
+      </div>
 
-    <div style="margin-top:6px;">
-      <div class="small">Send ETH</div>
+      <div class="row" style="margin-top:14px">
+        <button id="connectBtn" class="btn">Connect Wallet</button>
+        <button id="refreshBtn" class="btn btn-secondary">Refresh</button>
+      </div>
+
+      <div class="section-title">Send ETH</div>
       <div class="row">
         <input id="to" placeholder="Recipient address (0x...)" />
+        <button id="pasteBtn" class="small-btn" title="Paste">Paste</button>
       </div>
       <div class="row">
-        <input id="amount" type="number" step="0.0001" placeholder="Amount (ETH)" />
+        <input id="amount" type="number" step="0.000001" placeholder="Amount (ETH)" />
+        <button id="maxBtn" class="small-btn" title="Use max">Max</button>
       </div>
-      <div style="display:flex;gap:8px;margin-top:6px;">
-        <button id="sendBtn">Send</button>
-        <button id="txSimBtn">Simulate</button>
-      </div>
-    </div>
 
-    <div style="margin-top:12px;">
-      <div class="small">Transactions (local log)</div>
+      <div id="gasWarn" class="warn-bar">⚠️ Low gas settings detected — this may be mined slowly on Sepolia.</div>
+
+      <div class="row" style="margin-top:10px">
+        <button id="sendBtn" class="btn">Send</button>
+        <button id="txSimBtn" class="btn btn-secondary">Simulate</button>
+      </div>
+
+      <div class="section-title">Transactions</div>
       <div id="transactions"></div>
-    </div>
 
-    <div style="margin-top:12px;" class="small">
-      Helpful: Use Sepolia Faucet to get test ETH. View transaction on Etherscan (Sepolia).
+      <div class="section-title" style="margin-top:14px;">
+        <a class="link" target="_blank" href="https://sepoliafaucet.com">Get Sepolia test ETH</a> ·
+        <a id="acctLink" class="link" target="_blank" href="#">View on Etherscan</a>
+      </div>
     </div>
   </div>
 
 <script>
-/* Your original script is untouched */
 document.addEventListener('DOMContentLoaded', () => {
   const connectBtn = document.getElementById('connectBtn');
   const refreshBtn = document.getElementById('refreshBtn');
@@ -173,25 +223,76 @@ document.addEventListener('DOMContentLoaded', () => {
   const txSimBtn = document.getElementById('txSimBtn');
   const addressEl = document.getElementById('address');
   const balanceEl = document.getElementById('balance');
+  const lastUpdatedEl = document.getElementById('lastUpdated');
   const toEl = document.getElementById('to');
   const amountEl = document.getElementById('amount');
   const txList = document.getElementById('transactions');
+  const gasWarn = document.getElementById('gasWarn');
+  const copyAddrBtn = document.getElementById('copyAddrBtn');
+  const pasteBtn = document.getElementById('pasteBtn');
+  const maxBtn = document.getElementById('maxBtn');
+  const acctLink = document.getElementById('acctLink');
 
-  let provider;
-  let signer;
-  let currentAddress;
+  let provider, signer, currentAddress, lastUpdateTs = null;
+  const pendingMap = new Map(); // hash -> element
 
-  function addTxLog(html) {
-    const el = document.createElement('div');
-    el.style.padding = '8px';
-    el.style.borderBottom = '1px solid rgba(255,255,255,0.03)';
-    el.innerHTML = html;
-    txList.prepend(el);
+  function shortAddr(a){ return a ? (a.slice(0,6)+'…'+a.slice(-4)) : ''; }
+  function since(ts){ if(!ts) return '—'; const s=Math.floor((Date.now()-ts)/1000); return (s<=1?'just now': s+'s ago'); }
+  function tickUpdated(){ lastUpdatedEl.textContent = 'Last updated ' + since(lastUpdateTs); }
+  setInterval(tickUpdated, 1000);
+
+  function addTxEl({hash, to, valueEth, status}) {
+    const wrap = document.createElement('div');
+    wrap.className = `tx ${status}`;
+    wrap.id = `tx-${hash}`;
+
+    const icon = document.createElement('div');
+    icon.className = 'tx-icon';
+    icon.innerHTML = status === 'pending' ? '⏳' : status === 'success' ? '✔' : '✖';
+
+    const body = document.createElement('div');
+    body.className = 'tx-body';
+
+    const top = document.createElement('div');
+    top.className = 'tx-top';
+
+    const title = document.createElement('div');
+    title.className = 'tx-title';
+    title.textContent = `Send ${valueEth} ETH`;
+
+    const pill = document.createElement('div');
+    pill.className = 'status-pill ' + (status === 'pending' ? 'pill-pending' : status === 'success' ? 'pill-success' : 'pill-fail');
+    pill.textContent = status === 'pending' ? 'Pending' : status === 'success' ? 'Confirmed' : 'Failed';
+
+    const meta = document.createElement('div');
+    meta.className = 'tx-meta';
+    const link = `<a class="link" href="https://sepolia.etherscan.io/tx/${hash}" target="_blank">${hash.slice(0,10)}…</a>`;
+    meta.innerHTML = `to ${shortAddr(to)} · ${link}`;
+
+    top.appendChild(title); top.appendChild(pill);
+    body.appendChild(top); body.appendChild(meta);
+
+    wrap.appendChild(icon); wrap.appendChild(body);
+    txList.prepend(wrap);
+    return wrap;
+  }
+  function setTxStatus(hash, status){
+    const el = document.getElementById(`tx-${hash}`);
+    if (!el) return;
+    el.classList.remove('pending','success','fail');
+    el.classList.add(status);
+    const icon = el.querySelector('.tx-icon');
+    const pill = el.querySelector('.status-pill');
+    if (status==='success'){ icon.textContent='✔'; pill.textContent='Confirmed'; pill.className='status-pill pill-success'; }
+    else if (status==='fail'){ icon.textContent='✖'; pill.textContent='Failed'; pill.className='status-pill pill-fail'; }
+    else { icon.textContent='⏳'; pill.textContent='Pending'; pill.className='status-pill pill-pending'; }
   }
 
   const setDisconnected = () => {
     addressEl.innerText = 'Not connected';
     balanceEl.innerText = '-';
+    acctLink.href = '#';
+    copyAddrBtn.disabled = true;
   };
 
   async function detectProvider() {
@@ -199,6 +300,7 @@ document.addEventListener('DOMContentLoaded', () => {
       provider = new ethers.BrowserProvider(window.ethereum);
       return true;
     }
+    alert('MetaMask not detected. Please install MetaMask and reload the page.');
     return false;
   }
 
@@ -206,40 +308,37 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!window.ethereum || window.ethereum._walletEventsBound) return;
 
     window.ethereum.on('connect', async () => {
-      addTxLog('<small class="small">Provider connect</small>');
       provider = new ethers.BrowserProvider(window.ethereum);
       try {
         signer = await provider.getSigner();
         currentAddress = await signer.getAddress();
         addressEl.innerText = currentAddress;
+        acctLink.href = `https://sepolia.etherscan.io/address/${currentAddress}`;
+        copyAddrBtn.disabled = false;
         await refreshBalance();
       } catch {}
     });
 
     window.ethereum.on('disconnect', () => {
-      addTxLog('<small class="small">Provider disconnect</small>');
       signer = undefined;
       currentAddress = undefined;
       setDisconnected();
     });
 
     window.ethereum.on('accountsChanged', async (accounts) => {
-      addTxLog(`<small class="small">accountsChanged: ${accounts[0] || 'none'}</small>`);
       if (!accounts || accounts.length === 0) {
-        signer = undefined;
-        currentAddress = undefined;
-        setDisconnected();
-        return;
+        signer = undefined; currentAddress = undefined; setDisconnected(); return;
       }
       provider = new ethers.BrowserProvider(window.ethereum);
       signer = await provider.getSigner();
       currentAddress = accounts[0];
       addressEl.innerText = currentAddress;
+      acctLink.href = `https://sepolia.etherscan.io/address/${currentAddress}`;
+      copyAddrBtn.disabled = false;
       await refreshBalance();
     });
 
     window.ethereum.on('chainChanged', async () => {
-      addTxLog('<small class="small">chainChanged — refreshing…</small>');
       provider = new ethers.BrowserProvider(window.ethereum);
       if (currentAddress) signer = await provider.getSigner();
       await refreshBalance();
@@ -250,10 +349,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function hydrateFromExistingConnection() {
     const ok = await detectProvider();
-    if (!ok) {
-      addressEl.innerText = 'MetaMask not detected';
-      return;
-    }
+    if (!ok) return;
     await setupEthEvents();
 
     try {
@@ -262,6 +358,8 @@ document.addEventListener('DOMContentLoaded', () => {
         signer = await provider.getSigner();
         currentAddress = accounts[0];
         addressEl.innerText = currentAddress;
+        acctLink.href = `https://sepolia.etherscan.io/address/${currentAddress}`;
+        copyAddrBtn.disabled = false;
         await refreshBalance();
       } else {
         addressEl.innerText = 'MetaMask available — click Connect';
@@ -274,17 +372,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function connectWallet() {
     const ok = await detectProvider();
-    if (!ok) {
-      alert('MetaMask not detected. Please install MetaMask and reload the page.');
-      return;
-    }
+    if (!ok) return;
     await setupEthEvents();
     try {
       await provider.send('eth_requestAccounts', []);
       signer = await provider.getSigner();
       currentAddress = await signer.getAddress();
       addressEl.innerText = currentAddress;
-      addTxLog(`<small class="small">Connected: ${currentAddress}</small>`);
+      acctLink.href = `https://sepolia.etherscan.io/address/${currentAddress}`;
+      copyAddrBtn.disabled = false;
       await refreshBalance();
     } catch (err) {
       console.error('Connection error', err);
@@ -301,59 +397,165 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const bal = await provider.getBalance(currentAddress);
       balanceEl.innerText = ethers.formatEther(bal);
+      lastUpdateTs = Date.now();
+      tickUpdated();
     } catch (err) {
       console.error('Balance error', err);
       alert('Failed to fetch balance: ' + (err.message || err));
     }
   }
 
+  // --------- Gas estimation warning (EIP-1559 aware) ----------
+  async function gasPreflight(to, valueWei){
+    try{
+      // Quick estimation first; errors here should block send.
+      const gas = await provider.estimateGas({ to, value: valueWei, from: currentAddress });
+      // Fee data (EIP-1559)
+      const fee = await provider.getFeeData();
+      // Heuristic: warn if suggested maxFeePerGas < 1.5 gwei on Sepolia OR if only legacy gasPrice < 1 gwei
+      let low = false;
+      if (fee.maxFeePerGas) {
+        low = fee.maxFeePerGas < ethers.parseUnits('1.5','gwei');
+      } else if (fee.gasPrice) {
+        low = fee.gasPrice < ethers.parseUnits('1','gwei');
+      }
+      gasWarn.style.display = low ? 'block' : 'none';
+      return { ok:true, low, gas, fee };
+    }catch(err){
+      gasWarn.style.display = 'block';
+      gasWarn.textContent = '⚠️ Unable to estimate gas — this transaction may fail.';
+      return { ok:false, err };
+    }
+  }
+
+  // ------------- Send with pending→confirmed polling -------------
   async function sendTx() {
-    if (!signer) { alert('Connect wallet first'); return; }
-    const to = toEl.value.trim();
-    const amount = amountEl.value.trim();
-    if (!to || !amount) { alert('Provide recipient and amount'); return; }
-    if (!to.startsWith('0x') || to.length !== 42) {
-      if (!confirm('Recipient address may be invalid. Continue?')) return;
-    }
-    if (Number(amount) > 0.5) {
-      const last4 = to.slice(-4);
-      const typed = prompt('You are sending a large amount. Type last 4 chars of recipient to confirm:');
-      if (typed !== last4) { alert('Confirmation failed'); return; }
-    }
     try {
-      const txReq = { to, value: ethers.parseEther(amount) };
-      addTxLog('Sending transaction...');
-      const txResp = await signer.sendTransaction(txReq);
-      addTxLog(`Broadcasted: <a class="link" href="https://sepolia.etherscan.io/tx/${txResp.hash}" target="_blank">${txResp.hash}</a>`);
-      await txResp.wait();
-      addTxLog(`Confirmed: <a class="link" href="https://sepolia.etherscan.io/tx/${txResp.hash}" target="_blank">${txResp.hash}</a>`);
-      await refreshBalance();
+      if (!provider) await detectProvider();
+      if (!signer) {
+        await provider.send('eth_requestAccounts', []);
+        signer = await provider.getSigner();
+        currentAddress = await signer.getAddress();
+      }
+
+      const to = toEl.value.trim();
+      const amount = amountEl.value.trim();
+      if (!to || !amount) { alert('Provide recipient and amount'); return; }
+      if (!ethers.isAddress(to)) { alert('Invalid address'); return; }
+
+      const valueWei = ethers.parseEther(amount);
+
+      const pre = await gasPreflight(to, valueWei);
+      if (!pre.ok) {
+        if (!confirm('Gas estimation failed. Try sending anyway?')) return;
+      } else if (pre.low) {
+        const go = confirm('Low gas settings may slow confirmation. Do you want to continue?');
+        if (!go) return;
+      }
+
+      const txResp = await signer.sendTransaction({ to, value: valueWei });
+      const el = addTxEl({ hash: txResp.hash, to, valueEth: amount, status: 'pending' });
+      pendingMap.set(txResp.hash, el);
+
+      // Start polling (every ~7s). Also handled on each new block below.
+      const timer = setInterval(async () => {
+        const receipt = await provider.getTransactionReceipt(txResp.hash);
+        if (receipt) {
+          if (receipt.status === 1) setTxStatus(txResp.hash, 'success');
+          else setTxStatus(txResp.hash, 'fail');
+          pendingMap.delete(txResp.hash);
+          clearInterval(timer);
+          refreshBalance();
+        }
+      }, 7000);
+
+      // Refresh immediately after broadcast (for nonce/txcount changes etc.)
+      refreshBalance();
+
     } catch (err) {
       console.error('Send error', err);
       alert('Send failed: ' + (err.message || err));
     }
   }
 
+  // ------------- Simulate (gas estimation only) -------------
   async function simulateTx() {
     if (!signer || !currentAddress) { alert('Connect wallet first'); return; }
     const to = toEl.value.trim();
     const amount = amountEl.value.trim();
     if (!to || !amount) { alert('Provide recipient and amount'); return; }
     try {
-      const txReq = { to, value: ethers.parseEther(amount), from: currentAddress };
-      const gas = await provider.estimateGas(txReq);
-      addTxLog(`Simulation: gas estimate ${gas.toString()}. Proceed with caution.`);
+      const req = { to, value: ethers.parseEther(amount), from: currentAddress };
+      const gas = await provider.estimateGas(req);
+      const fee = await provider.getFeeData();
+      const gp = fee.maxFeePerGas ? ethers.formatUnits(fee.maxFeePerGas, 'gwei') : (fee.gasPrice ? ethers.formatUnits(fee.gasPrice, 'gwei') : '?');
+      const el = document.createElement('div');
+      el.className = 'tx';
+      el.innerHTML = `<div class="tx-icon">🧪</div><div class="tx-body"><div class="tx-top"><div class="tx-title">Simulation</div><span class="status-pill pill-pending">Estimate</span></div><div class="tx-meta">gas ~ ${gas.toString()} · tip ~ ${gp} gwei</div></div>`;
+      txList.prepend(el);
+      gasWarn.style.display = 'none';
     } catch (err) {
-      addTxLog('Simulation error: ' + (err.message || err));
+      const el = document.createElement('div');
+      el.className = 'tx fail';
+      el.innerHTML = `<div class="tx-icon">✖</div><div class="tx-body"><div class="tx-top"><div class="tx-title">Simulation error</div><span class="status-pill pill-fail">Error</span></div><div class="tx-meta">${(err && err.message) ? err.message : String(err)}</div></div>`;
+      txList.prepend(el);
     }
   }
 
+  // ------------- Live balance change detection -------------
+  // Refresh on every new block; also check any pending txs quickly.
+  async function onNewBlock(blockNumber){
+    // gentle throttle: only touch DOM if connected
+    if (signer && currentAddress) {
+      refreshBalance();
+      // quick check pending
+      for (const [hash] of pendingMap.entries()) {
+        provider.getTransactionReceipt(hash).then((r)=>{
+          if (r) {
+            if (r.status === 1) setTxStatus(hash, 'success');
+            else setTxStatus(hash, 'fail');
+            pendingMap.delete(hash);
+          }
+        }).catch(()=>{});
+      }
+    }
+  }
+
+  // --------- Helpers (copy/paste/max) ----------
+  copyAddrBtn.addEventListener('click', async () => {
+    if (!currentAddress) return;
+    try { await navigator.clipboard.writeText(currentAddress); copyAddrBtn.textContent='Copied'; setTimeout(()=>copyAddrBtn.textContent='Copy', 1200);} catch{}
+  });
+  pasteBtn.addEventListener('click', async () => {
+    try { const t = await navigator.clipboard.readText(); if (t) toEl.value = t.trim(); } catch{}
+  });
+  maxBtn.addEventListener('click', async () => {
+    if (!signer || !currentAddress) return;
+    try {
+      const bal = await provider.getBalance(currentAddress);
+      // keep small buffer for fees
+      const buffer = ethers.parseUnits('0.0002','ether');
+      const usable = bal > buffer ? bal - buffer : bal;
+      amountEl.value = ethers.formatEther(usable);
+    } catch {}
+  });
+
+  // --------- Wire up UI ----------
   connectBtn.addEventListener('click', connectWallet);
   refreshBtn.addEventListener('click', refreshBalance);
   sendBtn.addEventListener('click', sendTx);
   txSimBtn.addEventListener('click', simulateTx);
 
-  hydrateFromExistingConnection();
+  // periodic soft refresh
+  setInterval(() => { if (signer) refreshBalance(); }, 10000);
+
+  // hydrate + subscribe to blocks
+  (async () => {
+    await hydrateFromExistingConnection();
+    if (await detectProvider()) {
+      provider.on('block', onNewBlock);
+    }
+  })();
 });
 </script>
 </body>
